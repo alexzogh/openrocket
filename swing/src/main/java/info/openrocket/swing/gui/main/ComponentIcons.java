@@ -32,6 +32,7 @@ import info.openrocket.core.rocketcomponent.RailButton;
 import info.openrocket.core.rocketcomponent.ShockCord;
 import info.openrocket.core.rocketcomponent.Streamer;
 import info.openrocket.core.rocketcomponent.Transition;
+import info.openrocket.core.rocketcomponent.RingTailFinSet;
 import info.openrocket.core.rocketcomponent.TrapezoidFinSet;
 import info.openrocket.core.rocketcomponent.TubeCoupler;
 import info.openrocket.core.rocketcomponent.TubeFinSet;
@@ -99,6 +100,8 @@ public class ComponentIcons {
 		load(freeformFinSet, trans.get("ComponentIcons.Freeformfinset"), FreeformFinSet.class);
 		//// Tube fin set
 		load(tubeFinSet, trans.get("ComponentIcons.Tubefinset"), TubeFinSet.class);
+		//// Ring-tail fin set (reuses tube fin icon)
+		load(tubeFinSet, trans.get("ComponentIcons.Ringtailfinset"), RingTailFinSet.class);
 		//// Launch lug
 		load(launchLug, trans.get("ComponentIcons.Launchlug"), LaunchLug.class);
 		//// Rail Button
