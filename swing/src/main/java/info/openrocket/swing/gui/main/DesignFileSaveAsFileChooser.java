@@ -21,6 +21,7 @@ import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.util.FileUtils;
 
 import info.openrocket.swing.gui.choosers.OBJOptionChooser;
+import info.openrocket.swing.gui.choosers.STLOptionChooser;
 import info.openrocket.swing.gui.choosers.StorageOptionChooser;
 import info.openrocket.swing.gui.util.FileHelper;
 import info.openrocket.swing.gui.util.GUIUtil;
@@ -92,8 +93,24 @@ public class DesignFileSaveAsFileChooser extends SaveFileChooser {
 				}
 
 				break;
+			case STL:
+				defaultFilename = FileHelper.forceExtension(defaultFilename, "stl");
+				this.setDialogTitle(trans.get("saveAs.stl.title"));
+				info.openrocket.core.file.stl.STLExportOptions stlInitialOptions = document.getDefaultSTLOptions();
+				STLOptionChooser stlChooser = new STLOptionChooser(this, stlInitialOptions, selectedComponents, document.getRocket());
+				this.setAccessory(stlChooser);
+				this.addChoosableFileFilter(FileHelper.STL_FILTER);
+				this.setFileFilter(FileHelper.STL_FILTER);
+
+				if (SystemInfo.getPlatform() == SystemInfo.Platform.MAC_OS && UITheme.isLightTheme(GUIUtil.getUITheme())) {
+					Dimension currentSize = this.getPreferredSize();
+					Dimension newSize = new Dimension((int) (1.35 * currentSize.width), (int) (1.5 * currentSize.height));
+					this.setPreferredSize(newSize);
+				}
+
+				break;
 		}
-		
+
 		final RememberFilenamePropertyListener listener = new RememberFilenamePropertyListener();
 		this.addPropertyChangeListener(JFileChooser.FILE_FILTER_CHANGED_PROPERTY, listener);
 		this.addPropertyChangeListener(JFileChooser.SELECTED_FILE_CHANGED_PROPERTY, listener);

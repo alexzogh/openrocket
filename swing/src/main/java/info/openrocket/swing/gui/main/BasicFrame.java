@@ -73,6 +73,8 @@ import info.openrocket.swing.gui.choosers.StorageOptionChooser;
 import info.openrocket.swing.gui.util.UpdateInfoRunner;
 import net.miginfocom.swing.MigLayout;
 
+import info.openrocket.core.file.stl.STLExportOptions;
+import info.openrocket.core.file.stl.STLExporter;
 import info.openrocket.core.file.wavefrontobj.export.OBJExportOptions;
 import info.openrocket.core.file.wavefrontobj.export.OBJExporterFactory;
 import info.openrocket.core.logging.ErrorSet;
@@ -81,6 +83,7 @@ import info.openrocket.core.appearance.DecalImage;
 import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.document.OpenRocketDocumentFactory;
+import info.openrocket.core.document.Simulation;
 import info.openrocket.core.document.StorageOptions;
 import info.openrocket.core.document.StorageOptions.FileType;
 import info.openrocket.core.document.events.DocumentChangeEvent;
@@ -113,6 +116,7 @@ import info.openrocket.swing.gui.export.SVGRocketPartsExporter;
 import info.openrocket.swing.gui.export.SvgOptionsDialog;
 import info.openrocket.swing.gui.dialogs.AboutDialog;
 import info.openrocket.swing.gui.dialogs.BugReportDialog;
+import info.openrocket.swing.gui.dialogs.EjectionChargeDialog;
 import info.openrocket.swing.gui.dialogs.componentanalysis.ComponentAnalysisDialog;
 import info.openrocket.swing.gui.dialogs.DebugLogDialog;
 import info.openrocket.swing.gui.dialogs.DecalNotFoundDialog;
@@ -121,6 +125,7 @@ import info.openrocket.swing.gui.dialogs.LicenseDialog;
 import info.openrocket.swing.gui.dialogs.PrintDialog;
 import info.openrocket.swing.gui.dialogs.SwingWorkerDialog;
 import info.openrocket.swing.gui.dialogs.WarningDialog;
+import info.openrocket.swing.gui.dialogs.motor.MotorRecommendationDialog;
 import info.openrocket.swing.gui.dialogs.optimization.GeneralOptimizationDialog;
 import info.openrocket.swing.gui.dialogs.preferences.PreferencesDialog;
 import info.openrocket.swing.gui.figure3d.photo.PhotoFrame;
@@ -607,6 +612,23 @@ private static final Translator trans = Application.getTranslator();
 		});
 		exportSubMenu.add(exportSvgProfiles);
 
+		////// 		Export STL
+		JMenuItem exportSTL = new JMenuItem(trans.get("main.menu.file.exportAs.STL"));
+		exportSTL.setIcon(Icons.EXPORT_3D);
+		exportSTL.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.STL.desc"));
+		exportSTL.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				exportSTLAction();}
+		});
+		selectionModel.addDocumentSelectionListener(new DocumentSelectionListener() {
+			@Override
+			public void valueChanged(int changeType) {
+				exportSTL.setEnabled(getSelectedComponents() != null && !getSelectedComponents().isEmpty());
+			}
+		});
+		exportSubMenu.add(exportSTL);
+
 		fileMenu.add(exportSubMenu);
 		fileMenu.addSeparator();
 
@@ -920,6 +942,67 @@ private static final Translator trans = Application.getTranslator();
 				showBananaForScaleInToolsMenu = false;
 			}
 		});
+
+		////	Flight Animation
+		item = new JMenuItem("Flight Animation", KeyEvent.VK_A);
+		item.getAccessibleContext().setAccessibleDescription("Replay a simulation as an animated flight path");
+		item.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.info(Markers.USER_MARKER, "Flight animation selected");
+				List<Simulation> simulations = document.getSimulations();
+				if (simulations == null || simulations.isEmpty()) {
+					JOptionPane.showMessageDialog(BasicFrame.this,
+							"No simulations available. Please create and run a simulation first.",
+							"No Simulations", JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				// Find first simulated simulation, or use the first one
+				Simulation selectedSim = null;
+				for (Simulation sim : simulations) {
+					if (Simulation.isStatusUpToDate(sim.getStatus())) {
+						selectedSim = sim;
+						break;
+					}
+				}
+				if (selectedSim == null) {
+					JOptionPane.showMessageDialog(BasicFrame.this,
+							"No simulation has been run yet. Please run a simulation first.",
+							"No Simulation Data", JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				info.openrocket.swing.gui.dialogs.flightanimation.FlightAnimationDialog dialog =
+						new info.openrocket.swing.gui.dialogs.flightanimation.FlightAnimationDialog(
+								BasicFrame.this, selectedSim);
+				dialog.setVisible(true);
+			}
+		});
+		toolsMenu.add(item);
+
+		////	Recommend Motors
+		item = new JMenuItem("Recommend Motors...", KeyEvent.VK_R);
+		item.getAccessibleContext().setAccessibleDescription("Analyze rocket design and recommend suitable motors");
+		item.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.info(Markers.USER_MARKER, "Motor recommendation selected");
+				new MotorRecommendationDialog(document, BasicFrame.this).setVisible(true);
+			}
+		});
+		toolsMenu.add(item);
+
+		////	Ejection Charge Calculator
+		item = new JMenuItem("Ejection Charge Calculator...", KeyEvent.VK_J);
+		item.getAccessibleContext().setAccessibleDescription("Calculate black powder ejection charges for recovery deployment");
+		item.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.info(Markers.USER_MARKER, "Ejection Charge Calculator selected");
+				EjectionChargeDialog dialog = new EjectionChargeDialog(BasicFrame.this, document);
+				dialog.setVisible(true);
+			}
+		});
+		toolsMenu.add(item);
 
 		////	Debug
 		//	//	(shown if openrocket.debug.fileMenu is defined)
@@ -2156,6 +2239,54 @@ private static final Translator trans = Application.getTranslator();
 			return;
 		}
 		exportSvgProfilesAction(selectedComponents);
+	}
+
+
+	////	BEGIN STL Save/Export Action
+	/**
+	 * MODEL "Export as" STL file format
+	 *
+	 * @return true if the file was saved, false otherwise
+	 */
+	public boolean exportSTLAction() {
+		File file = openFileSaveAsDialog(FileType.STL, getSelectedComponents());
+		if (file == null) {
+			return false;
+		}
+
+		file = FileHelper.forceExtension(file, "stl");
+		if (FileHelper.confirmWrite(file, BasicFrame.this)) {
+			return saveAsSTL(file);
+		}
+		return false;
+	}
+
+	private boolean saveAsSTL(File file) {
+		STLExportOptions options = document.getDefaultSTLOptions();
+		return saveSTLFile(file, options);
+	}
+
+	/**
+	 * Perform the actual saving of the STL file
+	 * @param file file to be stored
+	 * @param options STL export options to use
+	 * @return true if the file was written
+	 */
+	private boolean saveSTLFile(File file, STLExportOptions options) {
+		WarningSet warnings = new WarningSet();
+		STLExporter exporter = new STLExporter(getSelectedComponents(), rocket.getSelectedConfiguration(),
+				file, options, warnings);
+		exporter.doExport();
+
+		// Show warning dialog
+		if (!warnings.isEmpty()) {
+			WarningDialog.showWarnings(this,
+					trans.get("BasicFrame.WarningDialog.saving.txt1") + " '" + file.getName() + "'.",
+					trans.get("BasicFrame.WarningDialog.saving.title"),
+					warnings);
+		}
+
+		return true;
 	}
 
 

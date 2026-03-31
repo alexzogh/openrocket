@@ -821,6 +821,8 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 			return true;
 		} else if (FreeformFinSet.class.isAssignableFrom(comptype)) {
 			return true;
+		} else if (RingTailFinSet.class.isAssignableFrom(comptype)) {
+			return true;
 		}
 		return false;
 	}

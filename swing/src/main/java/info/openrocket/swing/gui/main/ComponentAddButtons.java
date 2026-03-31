@@ -45,6 +45,7 @@ import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.rocketcomponent.ShockCord;
 import info.openrocket.core.rocketcomponent.Streamer;
 import info.openrocket.core.rocketcomponent.Transition;
+import info.openrocket.core.rocketcomponent.RingTailFinSet;
 import info.openrocket.core.rocketcomponent.TrapezoidFinSet;
 import info.openrocket.core.rocketcomponent.TubeCoupler;
 import info.openrocket.core.rocketcomponent.TubeFinSet;
@@ -130,6 +131,8 @@ public class ComponentAddButtons extends JPanel implements Scrollable {
 				new ComponentButton(document, selectionModel, FreeformFinSet.class, trans.get("compaddbuttons.Freeform")),
 				//// Freeform
 				new ComponentButton(document, selectionModel, TubeFinSet.class, trans.get("compaddbuttons.Tubefin")),
+				//// Ring-tail
+				new ComponentButton(document, selectionModel, RingTailFinSet.class, trans.get("compaddbuttons.Ringtail")),
 				//// Rail Button
 				new ComponentButton(document, selectionModel, RailButton.class, trans.get("compaddbuttons.RailButton")),
 				//// Launch lug
