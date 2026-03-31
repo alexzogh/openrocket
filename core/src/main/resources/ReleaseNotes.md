@@ -13,9 +13,9 @@ Release Notes
 
 </div>
 
-<div id="25.0.beta">
+<div id="beta">
 
-OpenRocket 25.0 Beta (2026-03-30)
+OpenRocket Beta (2026-03-30)
 -------------------------------------
 
 This is a beta release introducing five major new features contributed by Alex Zoghlin.

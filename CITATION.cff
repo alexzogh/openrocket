@@ -4,6 +4,6 @@ authors:
 - family-names: "Niskanen"
   given-names: "Sampo"
 title: "OpenRocket"
-version: 25.0-beta
+version: beta
 date-released: 2026-03-30
 url: "https://github.com/openrocket/openrocket"
